@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import './App.css'
+import { supabase } from './supabaseClient'
 
 // Custom SVGs as Components for rich visuals
 const SparklesIcon = () => (
@@ -197,6 +198,15 @@ function App() {
   const [theme, setTheme] = useState('purple') // 'purple' | 'emerald' | 'rose'
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState('home')
+
+  // Membership & Supabase States
+  const [user, setUser] = useState(null)
+  const [isMemberModalOpen, setIsMemberModalOpen] = useState(false)
+  const [memberTab, setMemberTab] = useState('signup') // 'signup' | 'signin' | 'profile'
+  const [memberForm, setMemberForm] = useState({ name: '', email: '', password: '', focus: 'Developer' })
+  const [memberError, setMemberError] = useState('')
+  const [memberLoading, setMemberLoading] = useState(false)
+  const [memberSuccess, setMemberSuccess] = useState('')
   
   // Project list
   const projects = [
@@ -275,6 +285,111 @@ function App() {
     
     return () => clearTimeout(timer);
   }, [currentTitle, isDeleting, titleIndex]);
+
+  // Check Supabase Auth Session
+  useEffect(() => {
+    const getSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        setUser(session?.user ?? null)
+      } catch (err) {
+        console.warn('Supabase Auth error:', err)
+      }
+    }
+    getSession()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => {
+      if (subscription) subscription.unsubscribe()
+    }
+  }, [])
+
+  const handleMemberSignUp = async (e) => {
+    e.preventDefault()
+    if (!memberForm.email.trim() || !memberForm.password.trim() || !memberForm.name.trim()) {
+      setMemberError('All fields are required.')
+      return
+    }
+    setMemberLoading(true)
+    setMemberError('')
+    setMemberSuccess('')
+    
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: memberForm.email,
+        password: memberForm.password,
+        options: {
+          data: {
+            full_name: memberForm.name,
+            focus: memberForm.focus
+          }
+        }
+      })
+      
+      if (error) throw error
+      
+      if (data.user) {
+        if (data.session === null) {
+          setMemberSuccess('Success! Check your inbox for a confirmation link.')
+        } else {
+          setMemberSuccess('Welcome to the community!')
+          setUser(data.user)
+          setTimeout(() => setIsMemberModalOpen(false), 1500)
+        }
+      }
+    } catch (err) {
+      setMemberError(err.message || 'Error creating account.')
+    } finally {
+      setMemberLoading(false)
+    }
+  }
+
+  const handleMemberSignIn = async (e) => {
+    e.preventDefault()
+    if (!memberForm.email.trim() || !memberForm.password.trim()) {
+      setMemberError('Email and Password are required.')
+      return
+    }
+    setMemberLoading(true)
+    setMemberError('')
+    setMemberSuccess('')
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: memberForm.email,
+        password: memberForm.password
+      })
+
+      if (error) throw error
+
+      setMemberSuccess('Signed in successfully!')
+      setUser(data.user)
+      setTimeout(() => {
+        setIsMemberModalOpen(false)
+      }, 1000)
+    } catch (err) {
+      setMemberError(err.message || 'Invalid email or password.')
+    } finally {
+      setMemberLoading(false)
+    }
+  }
+
+  const handleMemberSignOut = async () => {
+    setMemberLoading(true)
+    try {
+      await supabase.auth.signOut()
+      setUser(null)
+      setMemberSuccess('Signed out successfully.')
+      setTimeout(() => setIsMemberModalOpen(false), 1000)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setMemberLoading(false)
+    }
+  }
 
   // Handle active section scrolling highlight
   useEffect(() => {
@@ -418,6 +533,24 @@ function App() {
             <button className="btn btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }} onClick={() => scrollToSection('contact')}>
               Let's Chat
             </button>
+
+            {user ? (
+              <button 
+                className="btn btn-primary" 
+                style={{ padding: '0.5rem 1.25rem', fontSize: '0.85rem', whiteSpace: 'nowrap' }} 
+                onClick={() => { setIsMemberModalOpen(true); setMemberTab('profile'); }}
+              >
+                Hi, {user.user_metadata?.full_name?.split(' ')[0] || 'Member'} 👋
+              </button>
+            ) : (
+              <button 
+                className="btn btn-primary" 
+                style={{ padding: '0.5rem 1.25rem', fontSize: '0.85rem', whiteSpace: 'nowrap' }} 
+                onClick={() => { setIsMemberModalOpen(true); setMemberTab('signup'); }}
+              >
+                Join Community
+              </button>
+            )}
 
             {/* Mobile Menu Icon */}
             <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
@@ -865,6 +998,177 @@ function App() {
                   View Repository <GithubIcon />
                 </a>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Membership / Authentication Modal */}
+      {isMemberModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsMemberModalOpen(false)}>
+          <div className="modal-content member-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={() => setIsMemberModalOpen(false)}>✕</button>
+            <div className="modal-body" style={{ padding: '2rem 1.5rem 1.5rem' }}>
+              
+              {user ? (
+                /* Profile Panel */
+                <div className="member-profile-card">
+                  <div className="member-avatar">
+                    {user.user_metadata?.full_name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+                  </div>
+                  <h3 className="modal-title" style={{ marginBottom: '1.5rem' }}>Member Profile</h3>
+                  
+                  <div className="member-info-row">
+                    <span className="member-info-label">Name</span>
+                    <span className="member-info-value">{user.user_metadata?.full_name || 'Member'}</span>
+                  </div>
+                  <div className="member-info-row">
+                    <span className="member-info-label">Email</span>
+                    <span className="member-info-value">{user.email}</span>
+                  </div>
+                  <div className="member-info-row">
+                    <span className="member-info-label">Focus</span>
+                    <span className="member-info-value">{user.user_metadata?.focus || 'Developer'}</span>
+                  </div>
+                  <div className="member-info-row">
+                    <span className="member-info-label">Status</span>
+                    <span className="member-info-value" style={{ color: '#10b981' }}>Active Member ✓</span>
+                  </div>
+
+                  <button 
+                    onClick={handleMemberSignOut}
+                    className="btn btn-secondary" 
+                    style={{ width: '100%', marginTop: '2rem' }}
+                    disabled={memberLoading}
+                  >
+                    {memberLoading ? 'Signing Out...' : 'Sign Out'}
+                  </button>
+                </div>
+              ) : (
+                /* Auth Form Panel */
+                <>
+                  <div className="member-tabs">
+                    <button 
+                      className={`member-tab-btn ${memberTab === 'signup' ? 'active' : ''}`}
+                      onClick={() => { setMemberTab('signup'); setMemberError(''); setMemberSuccess(''); }}
+                    >
+                      Sign Up
+                    </button>
+                    <button 
+                      className={`member-tab-btn ${memberTab === 'signin' ? 'active' : ''}`}
+                      onClick={() => { setMemberTab('signin'); setMemberError(''); setMemberSuccess(''); }}
+                    >
+                      Sign In
+                    </button>
+                  </div>
+
+                  {memberError && <div className="auth-alert error">{memberError}</div>}
+                  {memberSuccess && <div className="auth-alert success">{memberSuccess}</div>}
+
+                  {(!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) && (
+                    <div className="env-warning-box">
+                      ⚠️ <strong>Dev Setup Needed:</strong> Please define your Supabase variables in the <code>.env</code> file or your Vercel settings to test this sign-up module live.
+                    </div>
+                  )}
+
+                  {memberTab === 'signup' ? (
+                    <form onSubmit={handleMemberSignUp} noValidate style={{ marginTop: '1rem' }}>
+                      <div className="form-group">
+                        <label className="form-label">Full Name</label>
+                        <input 
+                          type="text" 
+                          className="form-input" 
+                          required 
+                          placeholder="Your Name"
+                          value={memberForm.name}
+                          onChange={(e) => setMemberForm({...memberForm, name: e.target.value})}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Email Address</label>
+                        <input 
+                          type="email" 
+                          className="form-input" 
+                          required 
+                          placeholder="you@example.com"
+                          value={memberForm.email}
+                          onChange={(e) => setMemberForm({...memberForm, email: e.target.value})}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Password</label>
+                        <input 
+                          type="password" 
+                          className="form-input" 
+                          required 
+                          placeholder="••••••••"
+                          value={memberForm.password}
+                          onChange={(e) => setMemberForm({...memberForm, password: e.target.value})}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Primary Focus</label>
+                        <select 
+                          className="form-input" 
+                          style={{ background: '#0e111a', color: 'var(--text-secondary)' }}
+                          value={memberForm.focus}
+                          onChange={(e) => setMemberForm({...memberForm, focus: e.target.value})}
+                        >
+                          <option value="Developer">Developer</option>
+                          <option value="Designer">Designer</option>
+                          <option value="Entrepreneur">Entrepreneur</option>
+                          <option value="Student">Student</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+
+                      <button 
+                        type="submit" 
+                        className="btn btn-primary" 
+                        style={{ width: '100%', marginTop: '1.5rem' }}
+                        disabled={memberLoading}
+                      >
+                        {memberLoading ? 'Creating Account...' : 'Become a Member'}
+                      </button>
+                    </form>
+                  ) : (
+                    <form onSubmit={handleMemberSignIn} noValidate style={{ marginTop: '1rem' }}>
+                      <div className="form-group">
+                        <label className="form-label">Email Address</label>
+                        <input 
+                          type="email" 
+                          className="form-input" 
+                          required 
+                          placeholder="you@example.com"
+                          value={memberForm.email}
+                          onChange={(e) => setMemberForm({...memberForm, email: e.target.value})}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Password</label>
+                        <input 
+                          type="password" 
+                          className="form-input" 
+                          required 
+                          placeholder="••••••••"
+                          value={memberForm.password}
+                          onChange={(e) => setMemberForm({...memberForm, password: e.target.value})}
+                        />
+                      </div>
+
+                      <button 
+                        type="submit" 
+                        className="btn btn-primary" 
+                        style={{ width: '100%', marginTop: '1.5rem' }}
+                        disabled={memberLoading}
+                      >
+                        {memberLoading ? 'Signing In...' : 'Sign In'}
+                      </button>
+                    </form>
+                  )}
+                </>
+              )}
+              
             </div>
           </div>
         </div>
