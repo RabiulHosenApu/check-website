@@ -177,7 +177,7 @@ const WorkspaceSVG = () => (
       {/* Active typing cursor */}
       <rect x="154" y="44" width="2" height="12" fill="var(--accent-color)" />
       <rect x="160" y="58" width="80" height="18" rx="4" fill="var(--accent-color)" />
-      <text x="166" y="70" fill="#06070a" fontSize="8" fontWeight="bold" fontFamily="sans-serif">ALEX TYPING</text>
+      <text x="166" y="70" fill="#06070a" fontSize="8" fontWeight="bold" fontFamily="sans-serif">RABIUL TYPING</text>
     </g>
     
     {/* Floating card element */}
@@ -190,6 +190,8 @@ const WorkspaceSVG = () => (
     <circle cx="337" cy="232" r="8" fill="rgba(255,255,255,0.1)" />
   </svg>
 )
+
+const TITLES = ["Creative Developer", "React Specialist", "UI/UX Designer"]
 
 function App() {
   const [theme, setTheme] = useState('purple') // 'purple' | 'emerald' | 'rose'
@@ -245,8 +247,6 @@ function App() {
   const [activeProject, setActiveProject] = useState(null)
   const [projectFilter, setProjectFilter] = useState('All')
 
-  // Typing effect hook values
-  const titles = ["Creative Developer", "React Specialist", "UI/UX Designer"]
   const [titleIndex, setTitleIndex] = useState(0)
   const [currentTitle, setCurrentTitle] = useState("")
   const [isDeleting, setIsDeleting] = useState(false)
@@ -254,7 +254,7 @@ function App() {
   // Typing animation effect
   useEffect(() => {
     let timer;
-    const fullText = titles[titleIndex];
+    const fullText = TITLES[titleIndex];
     
     if (isDeleting) {
       timer = setTimeout(() => {
@@ -270,7 +270,7 @@ function App() {
       timer = setTimeout(() => setIsDeleting(true), 2000);
     } else if (isDeleting && currentTitle === "") {
       setIsDeleting(false);
-      setTitleIndex(prev => (prev + 1) % titles.length);
+      setTitleIndex(prev => (prev + 1) % TITLES.length);
     }
     
     return () => clearTimeout(timer);
@@ -384,7 +384,7 @@ function App() {
       <nav className="navbar">
         <div className="container navbar-container">
           <div className="nav-logo" onClick={() => scrollToSection('home')}>
-            AR<span className="logo-dot"></span>
+            RH<span className="logo-dot"></span>
           </div>
 
           <ul className={`nav-menu ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
@@ -466,7 +466,7 @@ function App() {
                   <span className="dot dot-yellow"></span>
                   <span className="dot dot-green"></span>
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>alex_rivera_resume.js</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>rabiul_hosen_resume.js</div>
               </div>
               <div className="visual-body">
                 <div className="visual-circle">
@@ -499,7 +499,7 @@ function App() {
           <div className="about-grid">
             <div className="about-bio">
               <p>
-                Hello! I'm Alex Rivera, a frontend engineer and interface designer based in San Francisco. I craft websites and application UI mockups that feel responsive, fast, and visually rewarding.
+                Hello! I'm Md. Rabiul Hosen Apu, a frontend engineer and interface designer based in Bangladesh. I craft websites and application UI mockups that feel responsive, fast, and visually rewarding.
               </p>
               <p>
                 Over the past 5 years, I've worked alongside growing startups and established studios to build custom design systems, client portals, and fluid marketing sites. I strive for clean semantic HTML, modular CSS layout utilities, and maintainable state loops.
@@ -701,7 +701,7 @@ function App() {
                 </div>
                 <div>
                   <div className="contact-label">Email Me</div>
-                  <div className="contact-value">alex@riveradesign.io</div>
+                  <div className="contact-value">rabiulhosenapu@std.cu.bd</div>
                 </div>
               </div>
 
@@ -711,7 +711,7 @@ function App() {
                 </div>
                 <div>
                   <div className="contact-label">Based In</div>
-                  <div className="contact-value">San Francisco, CA</div>
+                  <div className="contact-value">Chittagong, Bangladesh</div>
                 </div>
               </div>
 
@@ -721,7 +721,7 @@ function App() {
                 </div>
                 <div>
                   <div className="contact-label">Call / Text</div>
-                  <div className="contact-value">+1 (415) 555-0192</div>
+                  <div className="contact-value">Available on Request</div>
                 </div>
               </div>
             </div>
@@ -800,7 +800,7 @@ function App() {
       <footer className="footer">
         <div className="container footer-container">
           <div className="footer-logo">
-            AR<span className="logo-dot"></span>
+            RH<span className="logo-dot"></span>
           </div>
           <ul className="footer-links">
             <li><a href="#home" className="footer-link" onClick={(e) => { e.preventDefault(); scrollToSection('home'); }}>Home</a></li>
@@ -814,7 +814,7 @@ function App() {
             <a href="https://twitter.com" target="_blank" rel="noreferrer" className="btn-icon" aria-label="Twitter"><TwitterIcon /></a>
           </div>
           <div className="footer-copy">
-            &copy; {new Date().getFullYear()} Alex Rivera. Crafted with React & Ambient CSS variables. All rights reserved.
+            &copy; {new Date().getFullYear()} Md. Rabiul Hosen Apu. Crafted with React & Ambient CSS variables. All rights reserved.
           </div>
         </div>
       </footer>
