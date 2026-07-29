@@ -37,6 +37,12 @@
 }
 
 /* Theme configurations */
+.theme-purple {
+  --accent-h: 263;
+  --accent-s: 90%;
+  --accent-l: 70%;
+}
+
 .theme-emerald {
   --accent-h: 160;
   --accent-s: 84%;
@@ -47,6 +53,14 @@
   --accent-h: 343;
   --accent-s: 90%;
   --accent-l: 65%;
+}
+
+/* Force re-evaluation of derived variables at the theme wrapper level */
+.theme-purple, .theme-emerald, .theme-rose {
+  --accent-color: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
+  --accent-color-hover: hsl(var(--accent-h), var(--accent-s), calc(var(--accent-l) - 8%));
+  --accent-glow: hsla(var(--accent-h), var(--accent-s), var(--accent-l), 0.15);
+  --accent-glow-strong: hsla(var(--accent-h), var(--accent-s), var(--accent-l), 0.35);
 }
 
 /* Global Reset */
